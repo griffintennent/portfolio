@@ -1,70 +1,65 @@
-# Getting Started with Create React App
+# Portfolio
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Griffin Tennent's personal site — portfolio and side projects. Built with Vite, React, TypeScript, and Tailwind CSS.
 
 ## Available Scripts
 
 In the project directory, you can run:
 
-### `npm start`
+### `npm run dev`
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+Runs the app in development mode with hot module reloading.\
+Open [http://localhost:5173](http://localhost:5173) to view it in the browser.
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+Note: this serves the frontend only. To also exercise the `/api/*` routes locally
+(Credit Union Lookup's news and rate cards), run `npm run dev:api` in a second
+terminal — Vite proxies `/api/*` requests to it (see `vite.config.ts`).
 
-### `npm test`
+### `npm run dev:api`
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+Runs a small local stand-in for Vercel's serverless functions (see
+`scripts/dev-api-server.ts`) on port 3001, so `/api/news` and `/api/rates` work
+during local development without needing the Vercel CLI. Reads keys from
+`.env.local`. Not used in production — Vercel deploys `api/*.ts` as real
+serverless functions there.
 
 ### `npm run build`
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+Type-checks the project and builds it for production to the `dist` folder.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### `npm run preview`
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+Serves the production build from `dist` locally, for a final check before deploying.
 
-### `npm run eject`
+### `npm run lint`
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+Runs ESLint over the project.
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### `npm run ingest:call-report`
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+Re-runs the one-time ETL that pulls NCUA's latest quarterly Call Report data into
+`data/call-report.json`, served via `/api/call-report` (see `scripts/ingest-call-report.ts`). Re-run each
+quarter to refresh the figures — update `CALL_REPORT_URL` in that script first.
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+## API keys
 
-## Learn More
+The Credit Union Lookup project (`/api/news.ts`, `/api/rates.ts`) needs two free API keys,
+set as environment variables (never commit real values — see `.env.example`):
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+- `NYT_API_KEY` — from [developer.nytimes.com](https://developer.nytimes.com/), enable "Article Search API"
+- `FRED_API_KEY` — from [fred.stlouisfed.org/docs/api/api_key.html](https://fred.stlouisfed.org/docs/api/api_key.html)
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+For local development, copy `.env.example` to `.env.local` and fill in real values (used by
+`npm run dev:api`). For production, add both as Environment Variables in the Vercel project
+settings.
 
-### Code Splitting
+## Deployment
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+Hosted on [Vercel](https://vercel.com) — connect this GitHub repo in the Vercel dashboard and
+it auto-deploys on every push to `master` (zero config needed; Vercel auto-detects the Vite
+build and treats files under `api/` as serverless functions). To deploy manually instead:
 
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+```
+npx vercel        # preview deploy
+npx vercel --prod # production deploy
+```
