@@ -26,8 +26,10 @@ if (existsSync(envPath)) {
 
 const routes: Record<string, () => Promise<{ GET: (req: Request) => Promise<Response> }>> = {
   '/api/news': () => import('../api/news.ts'),
-  '/api/rates': () => import('../api/rates.ts'),
   '/api/call-report': () => import('../api/call-report.ts'),
+  '/api/complaints': () => import('../api/complaints.ts'),
+  '/api/branch-rating': () => import('../api/branch-rating.ts'),
+  '/api/branches': () => import('../api/branches.ts'),
 };
 
 const server = createServer(async (req, res) => {

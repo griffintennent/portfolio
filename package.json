@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "dev:api": "tsx scripts/dev-api-server.ts",
-    "ingest:call-report": "tsx scripts/ingest-call-report.ts"
+    "ingest:call-report": "tsx scripts/ingest-call-report.ts",
+    "ingest:branches": "tsx scripts/ingest-hifld.ts"
   },
   "dependencies": {
     "react": "^19.0.0",
