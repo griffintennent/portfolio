@@ -30,6 +30,7 @@ const routes: Record<string, () => Promise<{ GET: (req: Request) => Promise<Resp
   '/api/complaints': () => import('../api/complaints.ts'),
   '/api/branch-rating': () => import('../api/branch-rating.ts'),
   '/api/branches': () => import('../api/branches.ts'),
+  '/api/geocode': () => import('../api/geocode.ts'),
 };
 
 const server = createServer(async (req, res) => {
