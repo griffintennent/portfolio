@@ -7,11 +7,11 @@ import {
 } from '../lib/hifldClient';
 import { getCallReportEntry, type CallReportEntry } from '../lib/callReportData';
 import { fetchIndustryNews, type NewsArticle } from '../lib/newsClient';
-import { fetchAutoLoanRate, type RateInfo } from '../lib/fredClient';
 import {
   fetchComplaintsSummary,
   type ComplaintsSummary,
 } from '../lib/complaintsClient';
+import { fetchBranchRating, type BranchRating } from '../lib/placesClient';
 
 const numberFormat = new Intl.NumberFormat('en-US');
 const currencyFormat = new Intl.NumberFormat('en-US', {
@@ -41,43 +41,43 @@ function branchAmenities(branch: CreditUnionGroup['branches'][number]): string[]
   return amenities;
 }
 
-function RateContextCard() {
-  const [rate, setRate] = useState<RateInfo | null>(null);
-  const [error, setError] = useState<string | null>(null);
+function StarRating({ rating, reviewCount }: BranchRating) {
+  if (rating === null) {
+    return <p className="mt-1 text-xs text-stone-400">No rating on file</p>;
+  }
+  const fullStars = Math.round(rating);
+  return (
+    <p className="mt-1 flex items-center gap-1 text-xs">
+      <span aria-hidden="true" className="tracking-tight text-amber-500">
+        {'★'.repeat(fullStars)}
+        <span className="text-stone-300">{'★'.repeat(5 - fullStars)}</span>
+      </span>
+      <span className="text-stone-500">
+        {rating.toFixed(1)}
+        {reviewCount !== null &&
+          ` (${numberFormat.format(reviewCount)} review${reviewCount === 1 ? '' : 's'})`}
+      </span>
+    </p>
+  );
+}
+
+function BranchRatingBadge({ query }: { query: string }) {
+  const [branchRating, setBranchRating] = useState<BranchRating | null>(null);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
-    fetchAutoLoanRate()
-      .then(setRate)
-      .catch(() => setError('Rate data unavailable right now.'));
-  }, []);
+    setBranchRating(null);
+    setError(false);
+    fetchBranchRating(query)
+      .then(setBranchRating)
+      .catch(() => setError(true));
+  }, [query]);
 
-  return (
-    <div className="border border-stone-200 bg-white p-5">
-      <h3 className="text-sm font-semibold text-stone-900">Market context</h3>
-      {error && <p className="mt-2 text-sm text-stone-500">{error}</p>}
-      {!error && !rate && (
-        <p className="mt-2 text-sm text-stone-500">Loading live rate…</p>
-      )}
-      {rate && (
-        <>
-          <p className="mt-2 text-2xl font-bold text-stone-900">
-            {rate.rate.toFixed(2)}%
-          </p>
-          <p className="mt-1 text-xs text-stone-500">
-            {rate.seriesTitle}, as of {rate.date} — source:{' '}
-            <a
-              href={`https://fred.stlouisfed.org/series/${rate.seriesId}`}
-              target="_blank"
-              rel="noreferrer"
-              className="underline hover:text-stone-900"
-            >
-              FRED ({rate.seriesId})
-            </a>
-          </p>
-        </>
-      )}
-    </div>
-  );
+  if (error) return null;
+  if (!branchRating) {
+    return <p className="mt-1 text-xs text-stone-400">Loading rating…</p>;
+  }
+  return <StarRating {...branchRating} />;
 }
 
 function CreditUnionProfile({ group }: { group: CreditUnionGroup }) {
@@ -164,7 +164,7 @@ function CreditUnionProfile({ group }: { group: CreditUnionGroup }) {
         </p>
       </div>
 
-      <div className="grid gap-6 sm:grid-cols-2">
+      <div>
         <div className="border border-stone-200 bg-white p-6">
           <h3 className="text-sm font-semibold text-stone-900">Size snapshot</h3>
           {callReportError && (
@@ -201,8 +201,6 @@ function CreditUnionProfile({ group }: { group: CreditUnionGroup }) {
             </dl>
           )}
         </div>
-
-        <RateContextCard />
       </div>
 
       <div className="border border-stone-200 bg-white p-6">
@@ -268,6 +266,7 @@ function CreditUnionProfile({ group }: { group: CreditUnionGroup }) {
         <ul className="mt-3 divide-y divide-stone-200">
           {group.branches.slice(0, BRANCH_DISPLAY_LIMIT).map((branch, i) => {
             const amenities = branchAmenities(branch);
+            const ratingQuery = `${group.name}, ${branch.addressLine1}, ${branch.city}, ${branch.state} ${branch.zip}`;
             return (
               <li key={i} className="py-3 first:pt-0 last:pb-0">
                 <p className="text-sm font-medium text-stone-900">
@@ -284,6 +283,7 @@ function CreditUnionProfile({ group }: { group: CreditUnionGroup }) {
                     {amenities.join(' · ')}
                   </p>
                 )}
+                <BranchRatingBadge query={ratingQuery} />
               </li>
             );
           })}
