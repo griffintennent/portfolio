@@ -8,6 +8,10 @@ import {
 import { getCallReportEntry, type CallReportEntry } from '../lib/callReportData';
 import { fetchIndustryNews, type NewsArticle } from '../lib/newsClient';
 import { fetchAutoLoanRate, type RateInfo } from '../lib/fredClient';
+import {
+  fetchComplaintsSummary,
+  type ComplaintsSummary,
+} from '../lib/complaintsClient';
 
 const numberFormat = new Intl.NumberFormat('en-US');
 const currencyFormat = new Intl.NumberFormat('en-US', {
@@ -79,6 +83,8 @@ function RateContextCard() {
 function CreditUnionProfile({ group }: { group: CreditUnionGroup }) {
   const [callReport, setCallReport] = useState<CallReportEntry | null>(null);
   const [callReportError, setCallReportError] = useState<string | null>(null);
+  const [complaints, setComplaints] = useState<ComplaintsSummary | null>(null);
+  const [complaintsError, setComplaintsError] = useState<string | null>(null);
 
   useEffect(() => {
     setCallReport(null);
@@ -93,6 +99,14 @@ function CreditUnionProfile({ group }: { group: CreditUnionGroup }) {
       })
       .catch(() => setCallReportError('Call Report data unavailable right now.'));
   }, [group.charterNumber]);
+
+  useEffect(() => {
+    setComplaints(null);
+    setComplaintsError(null);
+    fetchComplaintsSummary(group.name)
+      .then(setComplaints)
+      .catch(() => setComplaintsError('Complaint data unavailable right now.'));
+  }, [group.name]);
 
   const main = group.branches[0];
   const badges: string[] = [];
@@ -278,6 +292,57 @@ function CreditUnionProfile({ group }: { group: CreditUnionGroup }) {
           <p className="mt-3 text-xs text-stone-400">
             + {group.branches.length - BRANCH_DISPLAY_LIMIT} more branches not
             shown.
+          </p>
+        )}
+      </div>
+
+      <div className="border border-stone-200 bg-white p-6">
+        <h3 className="text-sm font-semibold text-stone-900">
+          Consumer complaints
+        </h3>
+        {complaintsError && (
+          <p className="mt-2 text-sm text-stone-500">{complaintsError}</p>
+        )}
+        {!complaintsError && !complaints && (
+          <p className="mt-2 text-sm text-stone-500">Loading…</p>
+        )}
+        {complaints && complaints.totalComplaints === 0 && (
+          <p className="mt-2 text-sm text-stone-500">
+            No complaints on file with the CFPB.
+          </p>
+        )}
+        {complaints && complaints.totalComplaints > 0 && (
+          <>
+            <p className="mt-3 text-2xl font-bold text-stone-900">
+              {numberFormat.format(complaints.totalComplaints)}
+            </p>
+            <p className="text-xs text-stone-400">
+              total complaints on file since 2011
+            </p>
+            {complaints.topIssues.length > 0 && (
+              <p className="mt-3 text-sm text-stone-600">
+                Most common: {complaints.topIssues.join(', ')}
+              </p>
+            )}
+            {complaints.reliefRate !== null && (
+              <p className="mt-1 text-sm text-stone-600">
+                {formatPercent(complaints.reliefRate)} of resolved complaints
+                ended in some relief for the consumer.
+              </p>
+            )}
+          </>
+        )}
+        {complaints && (
+          <p className="mt-3 text-xs text-stone-400">
+            Source:{' '}
+            <a
+              href={`https://www.consumerfinance.gov/data-research/consumer-complaints/search/?searchField=all&searchText=${encodeURIComponent(group.name)}`}
+              target="_blank"
+              rel="noreferrer"
+              className="underline hover:text-stone-900"
+            >
+              CFPB Consumer Complaint Database
+            </a>
           </p>
         )}
       </div>
