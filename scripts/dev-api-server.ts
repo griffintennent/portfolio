@@ -24,7 +24,7 @@ if (existsSync(envPath)) {
   }
 }
 
-const routes: Record<string, () => Promise<{ default: (req: Request) => Promise<Response> }>> = {
+const routes: Record<string, () => Promise<{ GET: (req: Request) => Promise<Response> }>> = {
   '/api/news': () => import('../api/news.ts'),
   '/api/rates': () => import('../api/rates.ts'),
   '/api/call-report': () => import('../api/call-report.ts'),
@@ -42,7 +42,7 @@ const server = createServer(async (req, res) => {
   try {
     const mod = await loadHandler();
     const request = new Request(url, { method: req.method });
-    const response = await mod.default(request);
+    const response = await mod.GET(request);
     const body = await response.text();
     res.writeHead(response.status, {
       'Content-Type': response.headers.get('Content-Type') ?? 'application/json',

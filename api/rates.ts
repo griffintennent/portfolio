@@ -7,7 +7,7 @@
 const SERIES_ID = 'RIFLPBCIANM60NM';
 const SERIES_TITLE = 'New auto loan rate, commercial banks, 60-month (national average)';
 
-export default async function handler(): Promise<Response> {
+export async function GET(): Promise<Response> {
   const apiKey = process.env.FRED_API_KEY;
   if (!apiKey) {
     return Response.json({ error: 'Server is missing FRED_API_KEY' }, { status: 500 });
