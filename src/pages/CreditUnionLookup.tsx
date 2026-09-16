@@ -12,6 +12,7 @@ import {
   type ComplaintsSummary,
 } from '../lib/complaintsClient';
 import { fetchBranchRating, type BranchRating } from '../lib/placesClient';
+import { fetchZipFromCoords } from '../lib/geocodeClient';
 
 const numberFormat = new Intl.NumberFormat('en-US');
 const currencyFormat = new Intl.NumberFormat('en-US', {
@@ -408,8 +409,9 @@ function CreditUnionLookup() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
+  const [locating, setLocating] = useState(false);
 
-  async function runSearch(kind: 'name' | 'zip') {
+  async function runSearch(kind: 'name' | 'zip', zipOverride?: string) {
     setLoading(true);
     setError(null);
     setSelected(null);
@@ -422,7 +424,7 @@ function CreditUnionLookup() {
       const branches =
         kind === 'name'
           ? await searchByName(nameQuery)
-          : await searchByZipPrefix(zipQuery.trim().slice(0, 3));
+          : await searchByZipPrefix((zipOverride ?? zipQuery).trim().slice(0, 3));
       setResults(groupByCharter(branches));
     } catch {
       setError('Search failed — the credit union data source may be unavailable.');
@@ -442,6 +444,35 @@ function CreditUnionLookup() {
     e.preventDefault();
     if (zipQuery.trim().length < 3) return;
     runSearch('zip');
+  }
+
+  function handleUseLocation() {
+    if (!navigator.geolocation) {
+      setError('Location is not supported by this browser.');
+      return;
+    }
+    setLocating(true);
+    setError(null);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const zip = await fetchZipFromCoords(
+            position.coords.latitude,
+            position.coords.longitude
+          );
+          setZipQuery(zip);
+          await runSearch('zip', zip);
+        } catch {
+          setError('Could not determine a ZIP code for your location.');
+        } finally {
+          setLocating(false);
+        }
+      },
+      () => {
+        setError('Location access was denied.');
+        setLocating(false);
+      }
+    );
   }
 
   return (
@@ -477,6 +508,16 @@ function CreditUnionLookup() {
             placeholder="Browse near ZIP code"
             className="w-full border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 placeholder:text-stone-400 focus:border-stone-900 focus:outline-none"
           />
+          <button
+            type="button"
+            onClick={handleUseLocation}
+            disabled={locating}
+            title="Use my location"
+            aria-label="Use my location"
+            className="shrink-0 border border-stone-300 px-3 py-2 text-sm text-stone-600 hover:border-stone-900 hover:text-stone-900 disabled:opacity-50"
+          >
+            {locating ? '…' : '📍'}
+          </button>
           <button
             type="submit"
             className="shrink-0 border border-stone-300 px-4 py-2 text-sm font-semibold text-stone-800 hover:border-stone-900"
