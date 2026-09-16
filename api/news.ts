@@ -17,7 +17,7 @@ type NytDoc = {
   snippet?: string;
 };
 
-export default async function handler(): Promise<Response> {
+export async function GET(): Promise<Response> {
   const apiKey = process.env.NYT_API_KEY;
   if (!apiKey) {
     return Response.json({ error: 'Server is missing NYT_API_KEY' }, { status: 500 });
